@@ -14,18 +14,24 @@ kinds of issues:
 - `sh`
 
 ## Examples
-Pull updates from `/mnt/src`:
-`pull /mnt/src`
-
-Pull updates from `/mnt/src`, excluding `/mnt/src/too-big-for-dest`:
+Pull updates to `./target` from `/mnt/src`:
 ```
+echo target >> .pull.lst
+pull /mnt/src
+```
+
+Pull updates to `./target` from `/mnt/src`, excluding
+`/mnt/src/target/too-big-for-dest`:
+```
+echo target >> .pull.lst
 echo too-big-for-dest >> .pull-nopull.lst
 pull /mnt/src
 ```
 
-Pull updates from `/mnt/src`, but keep the `./must-stay` inode even if it's not
-in `/mnt/src`:
+Pull updates to `./target` from `/mnt/src`, but keep `./target/must-stay` even
+if it's not in `/mnt/src/target`:
 ```
+echo target >> .pull.lst
 echo must-stay >> .pull-nodelete.lst
 pull /mnt/src
 ```
