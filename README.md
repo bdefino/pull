@@ -17,7 +17,7 @@ kinds of issues:
 Pull updates from `/mnt/src`:
 `pull /mnt/src`
 
-Pull updates from `/mnt/src`, excluding a `/mnt/src/too-big-for-dest`:
+Pull updates from `/mnt/src`, excluding `/mnt/src/too-big-for-dest`:
 ```
 echo too-big-for-dest >> .pull-nopull.lst
 pull /mnt/src
