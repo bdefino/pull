@@ -28,20 +28,38 @@ PULL=.pull.lst
 RSYNC_CMD="rsync -arv --delete"
 SRC=
 
+# remove the exclude file
 cleanup() {
 	rm -f "${EXCLUDE}"
 }
 
+# strip the first layer of matching quotes around a string
+unquote() {
+	QUOTE="$(echo "$1" | cut -c 1)"
+	[ "${QUOTE}" != "\"" ] \
+		&& [ "${QUOTE}" != "'" ] \
+		&& echo "$1" \
+		&& return
+	[ "${QUOTE}" != "$(echo -n "$1" | tail -c 1)" ] \
+		&& echo "$1" \
+		&& return
+	UNQUOTED="${1#${QUOTE}}"
+	echo "${UNQUOTED%${QUOTE}}"
+}
+
 # parse arguments
 
-set -- $(getopt d:hn:p: -- "$@")
+! ARGS="$(getopt -- d:hn:p: "$@")" \
+	&& echo "${HELP}" >&2 \
+	&& exit 1
+set -- ${ARGS}
 
 while true
 do
 	case "$1"
 	in
 	-d)
-		NODELETE="$2"
+		NODELETE="$(unquote "$2")"
 		[ ! -f "${NODELETE}" ] \
 			&& echo "\`${NODELETE}\` isn't a file." >&2 \
 			&& exit 1
@@ -52,14 +70,14 @@ do
 			&& exit
 		;;
 	-n)
-		NOPULL="$2"
+		NOPULL="$(unquote "$2")"
 		[ ! -f "${NOPULL}" ] \
 			&& echo "\`${NOPULL}\` isn't a file." >&2 \
 			&& exit 1
 		shift
 		;;
 	-p)
-		PULL="$2"
+		PULL="$(unquote "$2")"
 		shift
 		;;
 	--)
@@ -75,7 +93,7 @@ do
 done
 
 [ -n "$2" ] \
-	&& DEST="$2"
+	&& DEST="$(unquote "$2")"
 [ ! -d "${DEST}" ] \
 	&& echo "\`${DEST}\` isn't a directory." >&2 \
 	&& exit 1
@@ -84,13 +102,16 @@ done
 	&& echo "\`${PULL}\` isn't a file." >&2 \
 	&& exit 1
 
-SRC="$1"
+SRC="$(unquote "$1")"
 [ $# -eq 0 ] \
 	&& echo "${HELP}" >&2 \
 	&& exit 1
 [ ! -d "${SRC}" ] \
 	&& echo "\`${SRC}\` isn't a directory." >&2 \
 	&& exit 1
+[ "$(realpath "${DEST}")" = "$(realpath "${SRC}")" ] \
+	&& echo "\`${SRC}\` and \`${DEST}\` are the same directory." \
+	&& exit
 
 if [ -f "${NODELETE}" ] \
 		|| [ -f "${NOPULL}" ]
