@@ -9,7 +9,7 @@ kinds of issues:
 > These issues get exacerbated when backing up/restoring between mediums with
 > different directory hierarchies (e.g. between partial and full hierarchies).
 
-Oh, and pull supports subpath preservation: so you can pull `src/a/b/c` to
+Oh, and `pull` supports subpath preservation: so you can pull `src/a/b/c` to
 `./a/b/c` with relative ease:
 ```
 echo a/b/c >> .pull.lst
