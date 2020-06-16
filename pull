@@ -28,9 +28,12 @@ PULL=.pull.lst
 RSYNC_CMD="rsync -arv --delete"
 SRC=
 
-# remove the exclude file
 cleanup() {
 	rm -f "${EXCLUDE}"
+}
+
+help() {
+	echo "${HELP}" >&2
 }
 
 # strip the first layer of matching quotes around a string
@@ -66,7 +69,7 @@ do
 		shift
 		;;
 	-h)
-		echo "${HELP}" >&2 \
+		help \
 			&& exit
 		;;
 	-n)
@@ -85,7 +88,7 @@ do
 		break
 		;;
 	*)
-		echo "${HELP}" >&2 \
+		help \
 			&& exit 1
 		;;
 	esac
@@ -104,7 +107,7 @@ done
 
 SRC="$(unquote "$1")"
 [ $# -eq 0 ] \
-	&& echo "${HELP}" >&2 \
+	&& help \
 	&& exit 1
 [ ! -d "${SRC}" ] \
 	&& echo "\`${SRC}\` isn't a directory." >&2 \
