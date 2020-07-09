@@ -30,6 +30,7 @@ SRC=
 
 cleanup() {
 	rm -f "${EXCLUDE}"
+	exit
 }
 
 help() {
@@ -122,7 +123,7 @@ then
 	# generate an exclude file
 
 	trap cleanup EXIT HUP INT TERM
-	EXCLUDE="$(mktemp)"
+	EXCLUDE="$(mktemp -p . .pull-exclude-XXXX.lst)"
 
 	[ -f "${NODELETE}" ] \
 		&& while IFS= read -r SUB
@@ -139,7 +140,7 @@ then
 				[ -n "$(echo "${SUB}" | tr -d "[:space:]")" ] \
 					&& [ -e "${SRC}/${SUB}" \
 					&& echo "${SUB}" >> "${EXCLUDE}"
-			done
+			done < "${NOPULL}"
 	RSYNC_CMD="${RSYNC_CMD} --exclude-from=${EXCLUDE}"
 fi
 
