@@ -138,7 +138,7 @@ then
 		&& while IFS= read -r SUB
 			do
 				[ -n "$(echo "${SUB}" | tr -d "[:space:]")" ] \
-					&& [ -e "${SRC}/${SUB}" \
+					&& [ -e "${SRC}/${SUB}" ] \
 					&& echo "${SUB}" >> "${EXCLUDE}"
 			done < "${NOPULL}"
 	RSYNC_CMD="${RSYNC_CMD} --exclude-from=${EXCLUDE}"
