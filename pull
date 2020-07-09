@@ -154,9 +154,6 @@ do
 	S="${SRC}/${SUB}"
 	[ ! -e "${S}" ] \
 		&& continue
-	! mkdir -p "${DP}" \
-		&& echo "Failed to make directory \"${DP}\"." >&2 \
-		&& exit 1
 	! ${RSYNC_CMD} "${S}" "${DP}" \
 		&& echo "\`rsync\` failed." >&2 \
 		&& exit 1
