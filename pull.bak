@@ -1,0 +1,168 @@
+#!/usr/bin/env sh
+# pull updates from a directory
+# requires `rsync`
+DEST=.
+EXCLUDE=
+HELP="pull updates from a directory
+Usage: $0 [OPTIONS] SRC [DEST]
+DEST
+	destination directory
+	(defaults to the CWD)
+OPTIONS
+	-d FILE
+		list FILE of subpaths to not delete
+		(defaults to \`.pull-nodelete.lst\`)
+	-h
+		print this text and exit
+	-n FILE
+		list FILE of subpaths to not pull
+		(defaults to \`.pull-nopull.lst\`)
+	-p FILE
+		list FILE of subpaths to pull
+		(defaults to \`.pull.lst\`)
+SRC
+	source directory"
+NODELETE=.pull-nodelete.lst
+NOPULL=.pull-nopull.lst
+PULL=.pull.lst
+RSYNC_CMD="rsync -anv --delete"
+SRC=
+
+cleanup() {
+	rm -f "${EXCLUDE}"
+	exit
+}
+
+help() {
+	echo "${HELP}" >&2
+}
+
+# strip the first layer of matching quotes around a string
+unquote() {
+	QUOTE="$(echo "$1" | cut -c 1)"
+	[ "${QUOTE}" != "\"" ] \
+		&& [ "${QUOTE}" != "'" ] \
+		&& echo "$1" \
+		&& return
+	[ "${QUOTE}" != "$(echo -n "$1" | tail -c 1)" ] \
+		&& echo "$1" \
+		&& return
+	UNQUOTED="${1#${QUOTE}}"
+	echo "${UNQUOTED%${QUOTE}}"
+}
+
+# parse arguments
+
+! ARGS="$(getopt -- d:hn:p: "$@")" \
+	&& echo "${HELP}" >&2 \
+	&& exit 1
+set -- ${ARGS}
+
+while true
+do
+	case "$1"
+	in
+	-d)
+		NODELETE="$(unquote "$2")"
+		[ ! -f "${NODELETE}" ] \
+			&& echo "\`${NODELETE}\` isn't a file." >&2 \
+			&& exit 1
+		shift
+		;;
+	-h)
+		help \
+			&& exit
+		;;
+	-n)
+		NOPULL="$(unquote "$2")"
+		[ ! -f "${NOPULL}" ] \
+			&& echo "\`${NOPULL}\` isn't a file." >&2 \
+			&& exit 1
+		shift
+		;;
+	-p)
+		PULL="$(unquote "$2")"
+		shift
+		;;
+	--)
+		shift
+		break
+		;;
+	*)
+		help \
+			&& exit 1
+		;;
+	esac
+	shift
+done
+
+[ -n "$2" ] \
+	&& DEST="$(unquote "$2")"
+[ -e "${DEST}" ] \
+	&& [ ! -d "${DEST}" ] \
+	&& echo "\`${DEST}\` exists, and isn't a directory." >&2 \
+	&& exit 1
+! mkdir -p "${DEST}" \
+	&& echo "\Failed to create `${DEST}\`." >&2 \
+	&& exit 1
+
+[ ! -f "${PULL}" ] \
+	&& echo "\`${PULL}\` isn't a file." >&2 \
+	&& exit 1
+
+SRC="$(unquote "$1")"
+[ $# -eq 0 ] \
+	&& help \
+	&& exit 1
+[ ! -d "${SRC}" ] \
+	&& echo "\`${SRC}\` isn't a directory." >&2 \
+	&& exit 1
+[ "$(realpath "${DEST}")" = "$(realpath "${SRC}")" ] \
+	&& echo "\`${SRC}\` and \`${DEST}\` are the same directory." \
+	&& exit
+
+if [ -f "${NODELETE}" ] \
+		|| [ -f "${NOPULL}" ]
+then
+	# generate an exclude file
+
+	trap cleanup EXIT HUP INT TERM
+	EXCLUDE="$(mktemp -p . .pull-exclude-XXXX.lst)"
+
+	[ -f "${NODELETE}" ] \
+		&& while IFS= read -r SUB
+			do
+				[ -n "$(echo "${SUB}" | tr -d "[:space:]")" ] \
+					&& [ ! -e "${SRC}/${SUB}" ] \
+					&& [ -e "${DEST}/${SUB}" ] \
+					&& echo "${SUB}" >> "${EXCLUDE}"
+			done < "${NODELETE}"
+
+	[ -f "${NOPULL}" ] \
+		&& while IFS= read -r SUB
+			do
+				[ -n "$(echo "${SUB}" | tr -d "[:space:]")" ] \
+					&& [ -e "${SRC}/${SUB}" ] \
+					&& echo "${SUB}" >> "${EXCLUDE}"
+			done < "${NOPULL}"
+	RSYNC_CMD="${RSYNC_CMD} --exclude-from=${EXCLUDE}"
+fi
+
+# pull
+
+while IFS= read -r SUB
+do
+	[ -z "$(echo "${SUB}" | tr -d "[:space:]")" ] \
+		&& continue
+	DP="$(dirname "${DEST}/${SUB}")"
+	S="${SRC}/${SUB}"
+	[ ! -e "${S}" ] \
+		&& continue
+	! mkdir -p "${DP}" \
+		&& echo "Failed to make directory \"${DP}\"." >&2 \
+		&& exit 1
+	! ${RSYNC_CMD} "${S}" "${DP}" \
+		&& echo "\`rsync\` failed." >&2 \
+		&& exit 1
+done < "${PULL}"
+
