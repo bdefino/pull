@@ -25,7 +25,7 @@ SRC
 NODELETE=.pull-nodelete.lst
 NOPULL=.pull-nopull.lst
 PULL=.pull.lst
-RSYNC_CMD="rsync -av --delete"
+RSYNC_CMD="rsync -anv --delete"
 SRC=
 
 cleanup() {
@@ -98,8 +98,12 @@ done
 
 [ -n "$2" ] \
 	&& DEST="$(unquote "$2")"
-[ ! -d "${DEST}" ] \
-	&& echo "\`${DEST}\` isn't a directory." >&2 \
+[ -e "${DEST}" ] \
+	&& [ ! -d "${DEST}" ] \
+	&& echo "\`${DEST}\` exists, and isn't a directory." >&2 \
+	&& exit 1
+! mkdir -p "${DEST}" \
+	&& echo "\Failed to create `${DEST}\`." >&2 \
 	&& exit 1
 
 [ ! -f "${PULL}" ] \
