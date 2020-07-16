@@ -156,6 +156,7 @@ do
 		&& continue
 	DP="$(dirname "${DEST}/${SUB}")"
 	S="${SRC}/${SUB}"
+	S="$(dirname "${S}")/$(basename "${S}")" # `rsync` breaks otherwise
 	[ ! -e "${S}" ] \
 		&& continue
 	! mkdir -p "${DP}" \
