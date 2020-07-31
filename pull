@@ -25,8 +25,7 @@ SRC
 NODELETE=.pull-nodelete.lst
 NOPULL=.pull-nopull.lst
 PULL=.pull.lst
-RSYNC_CMD="rsync -a --delete --info=BACKUP,COPY,DEL,FLIST,MISC,MOUNT,NAME \
-	--info PROGRESS1,PROGRESS2,REMOVE,SKIP,SYMSAFE"
+RSYNC_CMD="rsync -a --delete --info=ALL"
 SRC=
 
 cleanup() {
