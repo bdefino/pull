@@ -29,7 +29,7 @@ RSYNC_CMD="rsync -a --delete --info=ALL"
 SRC=
 
 cleanup() {
-	rm -f "${EXCLUDE}"
+	rm -f -- "${EXCLUDE}"
 	exit
 }
 
@@ -102,7 +102,7 @@ done
 	&& [ ! -d "${DEST}" ] \
 	&& echo "\`${DEST}\` exists, and isn't a directory." >&2 \
 	&& exit 1
-! mkdir -p "${DEST}" \
+! mkdir -p -- "${DEST}" \
 	&& echo "Failed to create \`${DEST}\`." >&2 \
 	&& exit 1
 
@@ -117,7 +117,7 @@ SRC="$(unquote "$1")"
 [ ! -d "${SRC}" ] \
 	&& echo "\`${SRC}\` isn't a directory." >&2 \
 	&& exit 1
-[ "$(realpath "${DEST}")" = "$(realpath "${SRC}")" ] \
+[ "$(realpath -- "${DEST}")" = "$(realpath -- "${SRC}")" ] \
 	&& echo "\`${SRC}\` and \`${DEST}\` are the same directory." \
 	&& exit
 
@@ -127,7 +127,7 @@ then
 	# generate an exclude file
 
 	trap cleanup EXIT HUP INT TERM
-	EXCLUDE="$(mktemp -p . .pull-exclude-XXXX.lst)"
+	EXCLUDE="$(mktemp -p ."${PWD}" .pull-exclude-XXXX.lst)"
 
 	[ -f "${NODELETE}" ] \
 		&& while IFS= read -r SUB
@@ -154,15 +154,15 @@ while IFS= read -r SUB
 do
 	[ -z "$(echo "${SUB}" | tr -d "[:space:]")" ] \
 		&& continue
-	DP="$(dirname "${DEST}/${SUB}")"
+	DP="$(dirname -- "${DEST}/${SUB}")"
 	S="${SRC}/${SUB}"
-	S="$(dirname "${S}")/$(basename "${S}")" # `rsync` breaks otherwise
+	S="$(dirname -- "${S}")/$(basename -- "${S}")" # or `rsync` will break
 	[ ! -e "${S}" ] \
 		&& continue
-	! mkdir -p "${DP}" \
+	! mkdir -p -- "${DP}" \
 		&& echo "Failed to make directory \"${DP}\"." >&2 \
 		&& exit 1
-	! ${RSYNC_CMD} "${S}" "${DP}" \
+	! ${RSYNC_CMD} -- "${S}" "${DP}" \
 		&& echo "\`rsync\` failed." >&2 \
 		&& exit 1
 done < "${PULL}"
