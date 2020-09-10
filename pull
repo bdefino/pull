@@ -127,7 +127,9 @@ then
 	# generate an exclude file
 
 	trap cleanup EXIT HUP INT TERM
-	EXCLUDE="$(mktemp -p ."${PWD}" .pull-exclude-XXXX.lst)"
+	! EXCLUDE="$(mktemp -p "${PWD}" .pull-exclude-XXXX.lst)" \
+		&& echo "Failed to create exclude file." >&2 \
+		&& exit 1
 
 	[ -f "${NODELETE}" ] \
 		&& while IFS= read -r SUB
@@ -135,16 +137,16 @@ then
 				[ -n "$(echo "${SUB}" | tr -d "[:space:]")" ] \
 					&& [ ! -e "${SRC}/${SUB}" ] \
 					&& [ -e "${DEST}/${SUB}" ] \
-					&& echo "${SUB}" >> "${EXCLUDE}"
-			done < "${NODELETE}"
+					&& echo "${SUB}"
+			done < "${NODELETE}" > "${EXCLUDE}"
 
 	[ -f "${NOPULL}" ] \
 		&& while IFS= read -r SUB
 			do
 				[ -n "$(echo "${SUB}" | tr -d "[:space:]")" ] \
 					&& [ -e "${SRC}/${SUB}" ] \
-					&& echo "${SUB}" >> "${EXCLUDE}"
-			done < "${NOPULL}"
+					&& echo "${SUB}"
+			done < "${NOPULL}" >> "${EXCLUDE}"
 	RSYNC_CMD="${RSYNC_CMD} --exclude-from=${EXCLUDE}"
 fi
 
